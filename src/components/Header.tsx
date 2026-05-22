@@ -9,14 +9,17 @@ const CONTRACT_ADDRESS = import.meta.env.VITE_ADDRESS;
 const CONTRACT_ABI = [
   "function addCandidates(string[] metadataCIDs)",
   "function owner() view returns (address)",
-  "function updateCandidateMetadata(uint8 id, string newCID)"
+  "function updateCandidateMetadata(uint8 id, string newCID)",
+  "function setEndTime(uint256 _time)",
 ];
 
 export default function Header() {
+  const [timeLeft, setTimeLeft] = useState("");
   const [address, setAddress] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [contract, setContract] = useState<any>(null);
-
+  const [endDate, setEndDate] = useState<string>("");
+  const [settingEnd, setSettingEnd] = useState(false);
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [images, setImages] = useState<FileList | null>(null);
 
@@ -77,7 +80,33 @@ export default function Header() {
     };
   }, []);
 
+
+    useEffect(() => {
+  const target = new Date("2026-05-23T18:30:00+07:00").getTime();
+
+  const interval = setInterval(() => {
+    const now = Date.now();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      setTimeLeft("Voting closed");
+      clearInterval(interval);
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+
+    setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
   return (
+
     <header className="sticky top-0 z-50 w-full bg-[#111] shadow-xl">
       <Marquee />
 
@@ -99,6 +128,9 @@ export default function Header() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-4">
+            <div className="text-white text-lg font-bold tracking-wide bg-white/10 px-4 py-2 rounded-xl shadow-md backdrop-blur-md">
+  ⏳ {timeLeft || "Loading..."}
+</div>
 
             {/* APPKIT CONNECT BUTTON */}
             <appkit-button />
@@ -154,6 +186,48 @@ export default function Header() {
           >
             Upload Candidates
           </button>
+          {/* ================= END TIME ================= */}
+          <div className="mt-6 border-t border-white/20 pt-4">
+            <h3 className="text-lg font-bold mb-3">Voting Deadline</h3>
+
+            <div className="flex items-center gap-3">
+
+              <input
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 rounded text-black"
+              />
+
+              <button
+                disabled={settingEnd}
+                onClick={async () => {
+                  if (!contract || !endDate) return;
+
+                  try {
+                    setSettingEnd(true);
+
+                    // convert datetime-local -> timestamp (seconds)
+                    const endTime =
+                      Math.floor(new Date(endDate).getTime() / 1000);
+
+                    const tx = await contract.setEndTime(endTime);
+                    await tx.wait();
+
+                    alert("Set end time success");
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to set end time");
+                  } finally {
+                    setSettingEnd(false);
+                  }
+                }}
+                className="bg-red-500 px-4 py-2 rounded-xl font-bold disabled:opacity-50"
+              >
+                {settingEnd ? "Setting..." : "Set End Time"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </header>

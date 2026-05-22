@@ -16,7 +16,7 @@ export default function Layout({ children }: any) {
       {children}
 
       <div className="p-6">
-        <appkit-button />
+        
       </div>
       <Footer/>
     </main>

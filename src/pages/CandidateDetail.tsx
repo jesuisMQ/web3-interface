@@ -183,7 +183,7 @@ useEffect(() => {
       // LOAD TRANSACTIONS
       // =========================
       const res = await fetch(
-        "https://api.studio.thegraph.com/query/1753759/my-vote-app/v0.0.1",
+        "https://api.studio.thegraph.com/query/1753759/my-vote-app/version/latest",
         {
           method: "POST",
           headers: {
